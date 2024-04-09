@@ -2,6 +2,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 from models import reg_user_model, fetch_user_model, like_model, dislike_model, match_model
+from ai import generate_modules, generate_questions
 import os
 
 
@@ -11,6 +12,8 @@ db = client["v-konnekt"]
 users = db["users"]
 likes = db["likes"]
 matches = db["matches"]
+courses = db["courses"]
+questions = db["questions"]
 
 
 def register_user(reg_user: reg_user_model):
@@ -94,6 +97,41 @@ def get_unseen_users(id: int) -> set:
 
     return unseen
 
+def get_modules(course: str) -> dict:
+    '''
+    Get the modules for the course
+    If it exists in the modules collection then return it
+    Else generate the modules insert into the database and return it
+    '''
+    if courses.count_documents({"course": course}) > 0:
+        return courses.find_one({"course": course}, {"_id": 0})
+    else:
+        modules = generate_modules(course)
+        courses.insert_one({"course": course} | dict(modules))
+        return courses.find_one({"course": course}, {"_id": 0})
+
+def get_questions(course: str, module: str, subheading: str) -> dict:
+    '''
+    Get the questions for the course
+    If it exists in the questions collection then return it
+    Else generate the questions insert into the database and return it
+    '''
+    if questions.count_documents({"course": course, "module": module, "subheading": subheading}) > 0:
+        return questions.find_one({"course": course, "module": module, "subheading": subheading}, {"_id": 0})
+    else:
+        qs = generate_questions(course, module, subheading)
+        questions.insert_one({"course": course, "module": module, "subheading": subheading} | dict(qs))
+        return questions.find_one({"course": course, "module": module, "subheading": subheading}, {"_id": 0})
+    
 
 if __name__ == "__main__":
-    get_unseen_users(1)
+    print(get_questions("Python", "Module 1: Introduction to Python", "What is Python?"))
+
+
+'''
+# TODO
+Chat
+- list of msgs btw 2 ids
+- list of matches, last msg, last msg time
+- send msg
+'''

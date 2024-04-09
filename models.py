@@ -31,3 +31,7 @@ class dislike_model(BaseModel):
 class match_model(BaseModel):
     id1: int
     id2: int
+
+class fetch_course_model(BaseModel):
+    course: str
+    modules: dict
