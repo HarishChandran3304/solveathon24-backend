@@ -30,7 +30,7 @@ def register_user(reg_user: reg_user_model):
         "linkedin": "",
         "twitter": "",
         "skills": [],
-        "looking_for": []
+        "looking_for": [],
     }
     
     users.insert_one(user)
@@ -70,3 +70,30 @@ def match_users(match: match_model):
     id2 = match["id2"]
 
     matches.insert_one({"id1": id1, "id2": id2})
+
+def get_unseen_users(id: int) -> set:
+    '''
+    Get users that the user with id has not seen
+    Unseen users are all users minus the users in liked and matches
+    '''
+    #set of all users
+    all_users = set([user["id"] for user in users.find()]) - {id}
+    print(all_users)
+
+    #set of users in liked by id
+    liked = set([like["to_id"] for like in likes.find({"from_id": id})])
+    print(liked)
+
+    #set of users in matched with id
+    matched = set([match["id1"] for match in matches.find({"id2": id})])
+    print(matched)
+
+    #set of unseen users
+    unseen = all_users - liked - matched
+    print(unseen)
+
+    return unseen
+
+
+if __name__ == "__main__":
+    get_unseen_users(1)

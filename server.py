@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from db import register_user, like_user, dislike_user
+from db import register_user, like_user, dislike_user, get_unseen_users
 from models import reg_user_model, like_model, dislike_model
 
 
@@ -23,3 +23,7 @@ def like(like: like_model):
 def dislike(dislike: dislike_model):
     dislike_user(dislike)
     return {"message": "Student disliked successfully!"}
+
+@app.get("/unseen/{id}")
+def get_unseen(id: int):
+    return {"unseen": get_unseen_users(id)}
