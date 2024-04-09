@@ -35,3 +35,12 @@ class match_model(BaseModel):
 class fetch_course_model(BaseModel):
     course: str
     modules: dict
+
+class chat_model(BaseModel):
+    id1: int
+    id2: int
+
+class chat_text_model(BaseModel):
+    from_id: int
+    to_id: int
+    message: str

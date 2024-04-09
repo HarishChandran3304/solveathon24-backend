@@ -1,9 +1,10 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
-from models import reg_user_model, fetch_user_model, like_model, dislike_model, match_model
+from models import reg_user_model, fetch_user_model, like_model, dislike_model, match_model, chat_model, chat_text_model
 from ai import generate_modules, generate_questions
 import os
+from datetime import datetime
 
 
 load_dotenv()
@@ -14,6 +15,7 @@ likes = db["likes"]
 matches = db["matches"]
 courses = db["courses"]
 questions = db["questions"]
+chats = db["chats"]
 
 
 def register_user(reg_user: reg_user_model):
@@ -123,9 +125,70 @@ def get_questions(course: str, module: str, subheading: str) -> dict:
         questions.insert_one({"course": course, "module": module, "subheading": subheading} | dict(qs))
         return questions.find_one({"course": course, "module": module, "subheading": subheading}, {"_id": 0})
     
+def create_chat(chat: chat_model):
+    '''
+    Create a chat between the two users
+    '''
+    chats.insert_one(chat)
+
+def create_text(chat_text: chat_text_model):
+    '''
+    Add a text to the chat
+    '''
+    from_id = chat_text.from_id
+    to_id = chat_text.to_id
+    message = chat_text.message
+    timestamp = datetime.now().isoformat()
+
+    chats.update_one({"id1": from_id, "id2": to_id}, {"$push": {"messages": {"from_id": from_id, "message": message, "timestamp": timestamp}}})
+
+    return {"message": "Text sent successfully!"}
+
+def get_chat(id1: int, id2: int) -> list:
+    '''
+    Get the chat between the two users
+    '''
+    chat = chats.find_one({"id1": id1, "id2": id2}, {"_id": 0})
+
+    res = {"messages": []}
+    for message in chat["messages"]:
+        temp = {}
+        temp["author"] = "self" if message["from_id"] == id1 else str(id2)
+        temp["message"] = message["message"]
+
+        res["messages"].append(temp)
+    
+    return res
+
+
+def get_user_name(id: int) -> str:
+    '''
+    Get the name of the user with id
+    '''
+    return users.find_one({"id": id}, {"_id": 0, "name": 1})["name"]
+
+def get_all_chats(id: int) -> list:
+    '''
+    Get all the chats for the user
+    Get all chats where id1 is id
+    '''
+    all_chats = []
+    for chat in chats.find({"id1": id}, {"_id": 0}):
+        temp = {
+            "userid": chat["id2"],
+            "user": get_user_name(chat["id2"]),
+            "lastMessage": chat["messages"][-1]["message"],
+            "status": 0,
+            "image": "https://api.dicebear.com/8.x/bottts/png",
+            "time": chat["messages"][-1]["timestamp"]
+        }
+        all_chats.append(temp)
+    
+    return all_chats
+
 
 if __name__ == "__main__":
-    print(get_questions("Python", "Module 1: Introduction to Python", "What is Python?"))
+    get_chat(1, 2)
 
 
 '''
