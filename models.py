@@ -4,6 +4,17 @@ from pydantic import BaseModel
 class reg_user_model(BaseModel):
     reg_no: str
     passwd: str
+    name: str
+    tagline: str
+    description: str
+    skills: list[str]
+    looking_for: list[str]
+    types: list[str]
+
+
+class login_user_model(BaseModel):
+    reg_no: str
+    passwd: str
 
 class fetch_user_model(BaseModel):
     id: int
@@ -19,6 +30,7 @@ class fetch_user_model(BaseModel):
     twitter: str
     skills: list[str]
     looking_for: list[str]
+    type: list[str]
 
 class like_model(BaseModel):
     from_id: int

@@ -1,7 +1,7 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
-from models import reg_user_model, fetch_user_model, like_model, dislike_model, match_model, chat_model, chat_text_model
+from models import reg_user_model, login_user_model, fetch_user_model, like_model, dislike_model, match_model, chat_model, chat_text_model
 from ai import generate_modules, generate_questions
 import os
 from datetime import datetime
@@ -21,24 +21,37 @@ chats = db["chats"]
 def register_user(reg_user: reg_user_model):
     reg_no = reg_user.reg_no
     passwd = reg_user.passwd
+    name = reg_user.name
+    tagline = reg_user.tagline
+    description = reg_user.description
+    skills = reg_user.skills
+    looking_for = reg_user.looking_for
+    types = reg_user.types
+
 
     user = {
         "id": users.count_documents({}) + 1,
         "reg_no": reg_no,
         "passwd": passwd,
-        "name": "",
-        "tagline": "",
-        "department": "",
-        "batch": "",
-        "last_seen": "",
-        "github": "",
-        "linkedin": "",
-        "twitter": "",
-        "skills": [],
-        "looking_for": [],
+        "name": name,
+        "tagline": tagline,
+        "description": description,
+        "github": "https://github.com/HarishChandran3304",
+        "linkedin": "https://www.linkedin.com/in/theditor/",
+        "twitter": "https://twitter.com/nottheditor",
+        "skills": skills,
+        "looking_for": looking_for,
+        "types": types
     }
     
     users.insert_one(user)
+
+def login_user(login_user: login_user_model):
+    reg_no = login_user.reg_no
+    passwd = login_user.passwd
+
+    if users.count_documents({"reg_no": reg_no, "passwd": passwd}) > 0:
+        return {"username": reg_no, "user": users.find_one({"reg_no": reg_no, "passwd": passwd}, {"_id": 0})["name"]}
 
 def like_user(like: like_model):
     '''
@@ -83,21 +96,31 @@ def get_unseen_users(id: int) -> set:
     '''
     #set of all users
     all_users = set([user["id"] for user in users.find()]) - {id}
-    print(all_users)
 
     #set of users in liked by id
     liked = set([like["to_id"] for like in likes.find({"from_id": id})])
-    print(liked)
 
     #set of users in matched with id
     matched = set([match["id1"] for match in matches.find({"id2": id})])
-    print(matched)
 
     #set of unseen users
     unseen = all_users - liked - matched
-    print(unseen)
 
-    return unseen
+    res = []
+    for id in unseen:
+        temp = {}
+        temp["imageUrl"] = "https://api.dicebear.com/8.x/bottts/png"
+        temp["name"] = users.find_one({"id": id}, {"_id": 0, "name": 1})["name"]
+        temp["tagline"] = users.find_one({"id": id}, {"_id": 0, "tagline": 1})["tagline"]
+        temp["skills"] = users.find_one({"id": id}, {"_id": 0, "skills": 1})["skills"]
+        temp["lookingfor"] = users.find_one({"id": id}, {"_id": 0, "looking_for": 1})["looking_for"]
+        temp["types"] = users.find_one({"id": id}, {"_id": 0, "types": 1})["types"]
+        temp["id"] = str(id)
+        temp["description"] = "This is a description of the user." 
+
+        res.append(temp)
+    
+    return res
 
 def get_modules(course: str) -> dict:
     '''
@@ -175,7 +198,7 @@ def get_all_chats(id: int) -> list:
     all_chats = []
     for chat in chats.find({"id1": id}, {"_id": 0}):
         temp = {
-            "userid": chat["id2"],
+            "userid": str(chat["id2"]),
             "user": get_user_name(chat["id2"]),
             "lastMessage": chat["messages"][-1]["message"],
             "status": 0,
@@ -187,8 +210,9 @@ def get_all_chats(id: int) -> list:
     return all_chats
 
 
+
 if __name__ == "__main__":
-    get_chat(1, 2)
+    get_questions("JavaScript", "Introduction to JavaScript", "What is JavaScript?")
 
 
 '''

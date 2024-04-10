@@ -1,9 +1,29 @@
 from fastapi import FastAPI
-from db import register_user, like_user, dislike_user, get_unseen_users, get_modules, get_questions, get_all_chats, create_text, get_chat
-from models import reg_user_model, like_model, dislike_model, chat_model, chat_text_model
+from fastapi.middleware.cors import CORSMiddleware
+from db import register_user, like_user, login_user, dislike_user, get_unseen_users, get_modules, get_questions, get_all_chats, create_text, get_chat
+from models import reg_user_model, login_user_model, like_model, dislike_model, chat_model, chat_text_model
+
 
 
 app = FastAPI()
+
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "http://localhost:4040",
+    "https://positive-clearly-tiger.ngrok-free.app"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -14,6 +34,10 @@ def root():
 def register(user: reg_user_model):
     register_user(user)
     return {"message": "Student registered successfully!"}
+
+@app.post("/login")
+def login(user: login_user_model):
+    return login_user(user)
 
 @app.post("/like")
 def like(like: like_model):
